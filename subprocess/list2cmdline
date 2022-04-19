@@ -1,0 +1,57 @@
+#
+# Monkey patching :def:`list2cmdline` in module subprocess.py
+# Reason: unicode issue with python 2.7.18 on Windows 7 (not tested elsewhere)
+#
+
+import subprocess
+from sys import getfilesystemencoding
+
+ENCODING_FILENAME = getfilesystemencoding()
+
+def list2cmdline_patched(seq):
+    result = []
+    needquote = False
+    for arg in seq:
+
+        # apply patch (decode)
+        arg = arg.decode(ENCODING_FILENAME)
+#--- verbatim from here ------------------------------------------------------
+        bs_buf = []
+
+        # Add a space to separate this argument from the others
+        if result:
+            result.append(' ')
+
+        needquote = (" " in arg) or ("\t" in arg) or not arg
+        if needquote:
+            result.append('"')
+
+        for c in arg:
+            if c == '\\':
+                # Don't know if we need to double yet.
+                bs_buf.append(c)
+            elif c == '"':
+                # Double backslashes.
+                result.append('\\' * len(bs_buf)*2)
+                bs_buf = []
+                result.append('\\"')
+            else:
+                # Normal char
+                if bs_buf:
+                    result.extend(bs_buf)
+                    bs_buf = []
+                result.append(c)
+
+        # Add remaining backslashes, if any.
+        if bs_buf:
+            result.extend(bs_buf)
+
+        if needquote:
+            result.extend(bs_buf)
+            result.append('"')
+#--- verbatim until here -----------------------------------------------------
+    # Also patch (encode) the result
+    return ''.join(result).encode(ENCODING_FILENAME)
+
+# Apply patch
+subprocess.list2cmdline = list2cmdline_patched
