@@ -1,3 +1,5 @@
+# coding: utf-8
+from __future__ import unicode_literals
 #
 # Monkey patching :def:`list2cmdline` in module subprocess.py
 # Reason: unicode issue with python 2.7.18 on Windows 7 (not tested elsewhere)
