@@ -16,23 +16,22 @@ Traceback (most recent call last):
 UnicodeDecodeError: 'ascii' codec can't decode byte 0xe9 in position 0: ordinal not in range(128)
 </pre>
 
-Reason is, there are accented characters in the paths.
+Why? Paths contain accented characters.
 
-The solutions given in https://bugs.python.org/issue1759845 were not satisfying because:
-  1. I don't want to apply a patch to each PC I got python 2.7 installed on (and with the high probabilty I forget to do that).
-  2. I failed to install the correct subprocesww wheel (2 files) because I didn't (and still don't) know which one to pip.
-  3. Even if I could manage to import subprocesww, I reckon it would have been of no help because my script don't use Popen.
-  4. The traceback is pretty clear: the problem is in `list2cmdline`, not elsewhere.
-  5. The `args` passed to subprocess function is always a list, otherwise I'd do the encoding beforehand.
+The solutions given in https://bugs.python.org/issue1759845 were not satisfying for various reasons. And the traceback is pretty clear: the problem is in `list2cmdline`, not elsewhere.
 
-Hence, monkey patching seems the best solution.
+Hence, monkey patching seems the best solution. One of them being that at some time we'll have to move up to 3.x (or 4.x).
 
-To use this script, put it in a folder and import subprocess from there.
+To use this patch, put it at the top of your script.
 
 Example:
 <pre>
-from .patches import subprocess
+import subprocess
 ...
-out = subprocess.check_output(...)
+def list2cmdline_patched(seq):
+    ...
+subprocess.list2cmdline = list2cmdline_patched
+...
+subprocess.check_output(...)
 </pre>
 I reckon this solution also works with the other functions (communicate, check_call... and possibly Popen) because it does with .check_output and .call.
